@@ -5,9 +5,13 @@ from bson import ObjectId
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 
+from config import get_mongo_connection, get_kvs, DATA_REDUNDANCY
+from service.logging_service import provide
+
 # Create your views here.
 
 __LIMIT_TIME = datetime(2019, 1, 1)
+conn = get_mongo_connection()
 
 
 def check_key(key: str) -> ObjectId:
@@ -31,9 +35,23 @@ def get_redirect_page(request: HttpRequest) -> HttpResponse:
     :return:
     """
     _id = check_key(request.GET["k"])
-    # TODO query URL in mongodb
-    url = "https://www.google.com/"
+    res = get_kvs(conn).find_one({"_id": _id})
+    assert res is not None, "Can't find URL in database"
+    # todo ensure correct
+    # todo add more fields like IP
+    data = {
+        "url_id": _id,
+        "visit_time": datetime.now(),
+        "headers": request.headers
+    }
+    if DATA_REDUNDANCY:
+        data["data"] = res["data"]
+        data["url"] = res["url"]
+    provide(data)
+    url = res["url"]
     return redirect(url, permanent=False)
+
+# todo these interfaces need authority
 
 # todo add a new link
 # todo disable a key
