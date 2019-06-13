@@ -2,6 +2,7 @@ import time
 from queue import Queue
 from threading import Lock, Thread
 
+from click_ts.settings import DEBUG
 from config import QUEUE_MAX_SIZE, QUEUE_WRITING_LIMIT, QUEUE_WAITING_TIME, get_logging_collection
 
 logging_queue = Queue(maxsize=QUEUE_MAX_SIZE)
@@ -18,7 +19,8 @@ def provide(data):
     :return:
     """
     logging_queue.put(data)
-    clean_buffer()
+    if logging_queue.qsize() > QUEUE_WRITING_LIMIT:
+        clean_buffer()
 
 
 def clean_buffer():
@@ -26,13 +28,16 @@ def clean_buffer():
     Clear all the data in the queue
     :return:
     """
-    if logging_queue > QUEUE_WRITING_LIMIT:
+    if not logging_queue.empty():
         try:
             operation_lock.acquire()
             logs = []
             while not logging_queue.empty() and len(logs) < QUEUE_MAX_SIZE:
                 logs.append(logging_queue.get())
-            mongo_coll.insert_many(logs)
+            if DEBUG:
+                print("Queue cleaned, insert {} logs.".format(len(logs)))
+            if len(logs)>0:
+                mongo_coll.insert_many(logs)
         finally:
             try:
                 operation_lock.release()
@@ -55,6 +60,7 @@ class TimedCleanQueue(Thread):
         self.waiting_time = waiting_time
 
     def run(self) -> None:
+        print("Queue cleaning thread started.")
         while not self.is_stop:
             time.sleep(self.waiting_time)
             clean_buffer()
