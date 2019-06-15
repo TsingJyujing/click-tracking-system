@@ -1,16 +1,13 @@
 import json
 from base64 import b64decode, b64encode
 from datetime import datetime
-
 from bson import ObjectId
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
-
 from config import get_mongo_connection, get_kvs, DATA_REDUNDANCY
 from service.logging_service import provide
-# Create your views here.
-from utility.http_response import onerr_not_found_page, response_json
+from utility.http_response import on_error_not_found_page, response_json
 from utility.token_verify import token_required
 
 __LIMIT_TIME = datetime(2019, 1, 1)
@@ -67,7 +64,7 @@ def _extract_info_from_request(request: HttpRequest):
     }
 
 
-@onerr_not_found_page
+@on_error_not_found_page
 def get_redirect_page(request: HttpRequest) -> HttpResponse:
     """
     Redirect to URL by the key given, and insert log asynchronously
@@ -77,6 +74,7 @@ def get_redirect_page(request: HttpRequest) -> HttpResponse:
     _id = _convert_key_to_oid(request.GET["k"])
     res = get_kvs(conn).find_one({"_id": _id})
     assert res is not None, "Can't find URL in database"
+    assert res["valid"], "URL is not valid"
     data = _extract_info_from_request(request)
     data["url_id"] = _id
     data["visit_time"] = datetime.now()
@@ -85,13 +83,9 @@ def get_redirect_page(request: HttpRequest) -> HttpResponse:
         data["url"] = res["url"]
     provide(data)
     url = res["url"]
-    assert res["valid"], "URL is not valid"
+
     return redirect(url, permanent=False)
 
-
-# todo these interfaces need authority
-
-# Login not required, not bug, use token for ensuring convenient while using interface
 
 @csrf_exempt
 @token_required
@@ -118,9 +112,12 @@ def disable_link(request: HttpRequest):
             "valid": False
         }
     }).modified_count > 0
-    return {
-        "is_success": modify_result
-    }
+    if modify_result:
+        return {
+            "status": "success"
+        }
+    else:
+        raise Exception("Executed successfully but didn't modify anything.")
 
 
 @csrf_exempt
@@ -134,9 +131,12 @@ def enable_link(request: HttpRequest):
             "valid": True
         }
     }).modified_count > 0
-    return {
-        "is_success": modify_result
-    }
+    if modify_result:
+        return {
+            "status": "success"
+        }
+    else:
+        raise Exception("Executed successfully but didn't modify anything.")
 
 
 @token_required
@@ -146,4 +146,5 @@ def basic_information(request: HttpRequest):
     assert query_result is not None, "Key not exist."
     _id = query_result.pop("_id")
     query_result["key"] = _convert_oid_to_key(_id)
+    query_result["status"] = "success"
     return query_result

@@ -9,29 +9,39 @@ import os
 import sys
 import time
 import traceback
+from urllib.parse import quote
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpRequest
 from django.shortcuts import render
 
 from click_ts.settings import DEBUG
 
 
-def onerr_not_found_page(func):
+def on_error_not_found_page(func):
     """
     Process the exception in request, if error return a 404 page
     :param func:
     :return:
     """
-    def wrapper(request):
+
+    def wrapper(request: HttpRequest):
         try:
             return func(request)
         except Exception as ex:
-            print("Error:" + str(ex), file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
             if DEBUG:
-                return render(request, "404.html")
-            else:
                 raise ex
+            else:
+                return render(request, "404.html", context={
+                    "mail_subject": quote("[CTS BUG REPORT] " + str(ex)),
+                    "mail_body": quote(
+                        "Error caused by:\n{}\nRequest Info:{}\n".format(
+                            traceback.format_exc(),
+                            json.dumps({
+                                "raw_uri": request.get_raw_uri()
+                            }, indent=2)
+                        )
+                    )
+                })
 
     return wrapper
 

@@ -1,4 +1,7 @@
 # coding=utf-8
+import sys
+import traceback
+
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponseRedirect
@@ -28,8 +31,9 @@ def login_view(request):
             login(request, form.get_user())
             print("User {} has login.".format(form.get_user()))
             try:
-                next_page = request.GET["next"]
+                next_page = request.POST["next_page"]
             except:
+                print(traceback.format_exc(), file=sys.stderr)
                 next_page = "/"
             return redirect(next_page)
         else:
@@ -41,6 +45,7 @@ def login_view(request):
     return render(
         request,
         'login.html', context={
-            "csrf_token": token
+            "csrf_token": token,
+            "next_page": request.GET["next"] if "next" in request.GET else "/"
         }
     )

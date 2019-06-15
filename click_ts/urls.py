@@ -23,6 +23,7 @@ urlpatterns = [
     path(r'users/', include('user.urls')),
     path(r'users/', include('django.contrib.auth.urls')),
     path(r'api/', include('api.urls')),
-    path(r'j/', get_redirect_page),
-
+    # todo 等待页面开发完成再开放
+    # path(r'ui/', include('ui.urls')),
+    path(r'j/', get_redirect_page)
 ]
