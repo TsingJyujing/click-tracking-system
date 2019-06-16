@@ -3,16 +3,17 @@ from queue import Queue
 from threading import Lock, Thread
 
 from click_ts.settings import DEBUG
-from config import QUEUE_MAX_SIZE, QUEUE_WRITING_LIMIT, QUEUE_WAITING_TIME, get_logging_collection
+from config import QUEUE_MAX_SIZE, QUEUE_WRITING_LIMIT, QUEUE_WAITING_TIME, get_logging_collection, \
+    get_logging_connection
 
 logging_queue = Queue(maxsize=QUEUE_MAX_SIZE)
 
 operation_lock = Lock()
 
-mongo_coll = get_logging_collection()
+conn = get_logging_connection()
 
 
-def provide(data):
+def queue_provide(data):
     """
     Insert a data into queue
     :param data:
@@ -36,8 +37,8 @@ def clean_buffer():
                 logs.append(logging_queue.get())
             if DEBUG:
                 print("Queue cleaned, insert {} logs.".format(len(logs)))
-            if len(logs)>0:
-                mongo_coll.insert_many(logs)
+            if len(logs) > 0:
+                get_logging_collection(conn).insert_many(logs)
         finally:
             try:
                 operation_lock.release()

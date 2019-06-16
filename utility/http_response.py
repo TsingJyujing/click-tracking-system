@@ -9,6 +9,7 @@ import os
 import sys
 import time
 import traceback
+from typing import Iterable, Union
 from urllib.parse import quote
 
 from django.http import HttpResponse, HttpRequest
@@ -159,3 +160,17 @@ def response_figure_image(func):
             })
 
     return wrapper
+
+
+def method_verify(request: HttpRequest, methods: Union[str, Iterable[str]]):
+    """
+    Verify is method right
+    :param request: Django request
+    :param methods: Method(s)
+    :return:
+    """
+    if type(methods) == str:
+        method_check_pass = request.method.upper() == methods.upper()
+    else:
+        method_check_pass = request.method.upper() in {m.upper() for m in methods}
+    assert method_check_pass, "Interface should be call by {} method.".format("/".join(methods))

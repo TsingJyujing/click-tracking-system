@@ -8,4 +8,6 @@ urlpatterns = [
     path(r'disable/', views.disable_link, name='disable'),
     path(r'enable/', views.enable_link, name='enable'),
     path(r'detail/', views.basic_information, name='detail'),
+    # Dangerous! Be careful while using
+    path(r'delete/', views.delete_link, name='delete'),
 ]
