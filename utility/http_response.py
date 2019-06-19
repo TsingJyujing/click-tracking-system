@@ -169,8 +169,12 @@ def method_verify(request: HttpRequest, methods: Union[str, Iterable[str]]):
     :param methods: Method(s)
     :return:
     """
+    current_method = request.method.upper()
     if type(methods) == str:
-        method_check_pass = request.method.upper() == methods.upper()
+        method_check_pass = current_method == methods.upper()
+        assert method_check_pass, \
+            "Interface should be call by {} method, you're using {}.".format(methods, current_method)
     else:
-        method_check_pass = request.method.upper() in {m.upper() for m in methods}
-    assert method_check_pass, "Interface should be call by {} method.".format("/".join(methods))
+        method_check_pass = current_method in {m.upper() for m in methods}
+        assert method_check_pass, \
+            "Interface should be call by {} method, you're using {}.".format("/".join(methods), current_method)
