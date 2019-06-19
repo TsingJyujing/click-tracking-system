@@ -1,11 +1,37 @@
 #!/usr/bin/python3
 
-import os
 import argparse
+import os
+import shutil
+import sys
 
 
 def parameter_parse():
-    argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(
+        prog="docker_start.py",
+        description="Entry point for starting Docker container"
+    )
+    ap.add_argument(
+        "--mode",
+        dest="mode",
+        default="runserver",
+        help="mode can be runserver or createsuperuser, using docker run -it while creating super user.",
+        type=str
+    )
+    return ap.parse_args(sys.argv[1:])
+
+
+def init_db_if_not_exist():
+    """
+    Trying to find the database, if db not found, initialize one
+    :return:
+    """
+    if not os.path.exists("/data/db.sqlite3"):
+        print("Database file not exist, creating...")
+        os.system("/usr/bin/python3 manage.py migrate")
+        shutil.move("db.sqlite3", "/data/db.sqlite3")
+    else:
+        print("Database check passed.")
 
 
 def mount_data_config(src: str, target: str):
@@ -23,4 +49,14 @@ def mount_data_config(src: str, target: str):
             print("Mount file: {} -> {}".format(os.path.join(src, file), target_file))
             os.symlink(os.path.join(src, file), target_file)
 
-# todo Functions: start server, migrate and set superuser passwd
+
+if __name__ == '__main__':
+    pr = parameter_parse()
+    init_db_if_not_exist()
+    mount_data_config("/data", "/app")
+    if pr.mode == 'runserver':
+        os.system("/usr/bin/python3 manage.py runserver --noreload 0.0.0.0:80")
+    elif pr.mode == 'createsuperuser':
+        os.system("/usr/bin/python3 manage.py createsuperuser")
+    else:
+        raise Exception("Unsupport mode: {}".format(pr.mode))

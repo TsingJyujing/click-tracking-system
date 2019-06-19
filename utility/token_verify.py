@@ -1,7 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpRequest
 
-from config import get_token
+from config import token_valid
+
 
 def token_required(func):
     """
@@ -9,6 +10,7 @@ def token_required(func):
     :param func:
     :return:
     """
+
     def wrapper(request: HttpRequest) -> HttpResponse:
         try:
             if "token" in request.GET:
@@ -17,7 +19,7 @@ def token_required(func):
                 token = request.POST["token"]
             else:
                 raise Exception("Token not found in GET/POST, try to use Django CSRF token.")
-            assert token in get_token()
+            assert token_valid(token), "Authorize failed caused by incorrect token"
             return func(request)
         except:
             return login_required(func)(request)

@@ -16,6 +16,14 @@ QUEUE_WRITING_LIMIT = 200
 # The check interval to write
 QUEUE_WAITING_TIME = 0.2
 
+"""
+For debugging using, there're no host, maybe 127.0.0.1
+Reference:
+If you're using Docker on Mac, just use: docker.for.mac.host.internal
+If you're using Docker on Linux, please use `ip addr show docker0` show host IP
+"""
+DOCKER_HOST_IP = "127.0.0.1"
+
 
 def token_valid(token: str) -> bool:
     """
@@ -33,7 +41,7 @@ def get_mongo_connection():
     """
     # todo if your db have authorize or other settings
     # todo please attach your code here
-    return pymongo.MongoClient(host="127.0.0.1", port=27017, maxPoolSize=1000)
+    return pymongo.MongoClient(host=DOCKER_HOST_IP, port=27017, maxPoolSize=1000)
 
 
 def get_kvs(connection: pymongo.MongoClient):
@@ -52,7 +60,7 @@ def get_logging_connection():
     """
     # todo if your db have authorize or other settings
     # todo please attach your code here
-    return pymongo.MongoClient(host="127.0.0.1", port=27017, maxPoolSize=1000)
+    return pymongo.MongoClient(host=DOCKER_HOST_IP, port=27017, maxPoolSize=1000)
 
 
 def get_logging_collection(connection: pymongo.MongoClient):
@@ -63,7 +71,7 @@ def get_logging_collection(connection: pymongo.MongoClient):
     return connection.get_database('cts').get_collection('logging')
 
 
-def __init__():
+def initialize():
     """
     Initial code for using collections
     :return:
@@ -87,3 +95,6 @@ def __init__():
         lc.create_index([("ip", pymongo.HASHED)])
         lc.create_index([("url_id", pymongo.ASCENDING)])
         lc.create_index([("url", pymongo.HASHED)])
+
+
+initialize()

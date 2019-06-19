@@ -10,6 +10,25 @@ This project is developed for ApacheCN to tracking the user behaviors on viewing
 
 ### Start with Docker (Strongly Recommend!)
 
+#### Prepare Your Configure
+
+There're 2 files you should prepare for start your system, the most important is `config.py`, please follow the comment to write your own config file.
+Second is `token.txt`, of course, if you'd changed the `token_valid` function in `config.py`, 
+maybe this file is not necessary anymore and you may prepare another file.
+
+#### Create a Superuser Account
+
+```bash
+docker run -it -p 8000:80 -v {Your Data Dir}:/data \
+    tsingjyujing/click-tracking-system \
+    /usr/bin/python3 docker_start.py --mode createsuperuser
+```
+
+#### Start Your Service
+
+```bash
+docker run -d -p 8000:80 -v {Your Data Dir}:/data tsingjyujing/click-tracking-system
+```
 
 ### Setup by Python (For Debugging or Developing Usage)
 
@@ -34,4 +53,4 @@ Please open this file and read the comments.
 
 ## APIs
 
-Reading about [doc/Interface.md](doc/Interface.md) for more details.
+Reading about [doc/interfaces.md](doc/interfaces.md) for more details.
